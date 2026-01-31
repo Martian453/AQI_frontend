@@ -16,68 +16,78 @@ const LeafletMapCard = dynamic(
 )
 import { Download, Wifi, WifiOff } from "lucide-react"
 
+// CONFIGURATION: Change these values to update the dashboard
+const DASHBOARD_CONFIG = {
+  airQuality: {
+    pm25: 35,
+    pm10: 42,
+    co: 2.5,
+    no2: 12,
+    o3: 28,
+    so2: 5,
+    // Historical trend for the chart
+    chartData: {
+      labels: ["10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45", "12:00", "12:15"],
+      pm25: [25, 30, 28, 32, 35, 38, 36, 34, 33, 35],
+      pm10: [35, 38, 40, 42, 45, 43, 41, 40, 39, 42],
+      co: [2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.4, 2.3, 2.2, 2.5],
+      no2: [10, 11, 12, 13, 14, 15, 14, 13, 12, 12],
+      o3: [25, 28, 26, 29, 30, 28, 27, 26, 28, 29],
+      so2: [4, 5, 4.5, 5, 5.5, 5, 4.8, 4.5, 5, 5.2],
+    },
+  },
+  waterQuality: {
+    level: 6.5,
+    ph: 7.2,
+    turbidity: 3.5,
+  },
+  // Predictive Graph Data
+  forecastData: [
+    { time: "Now", actual: 145, predicted: 145 },
+    { time: "+1h", actual: null, predicted: 152 },
+    { time: "+2h", actual: null, predicted: 158 },
+    { time: "+3h", actual: null, predicted: 165 },
+    { time: "+4h", actual: null, predicted: 160 },
+    { time: "+5h", actual: null, predicted: 155 },
+    { time: "+6h", actual: null, predicted: 148 },
+  ],
+  // Donut Chart Data
+  pollutantDonutData: [
+    { name: "PM2.5", value: 45, color: "#7CFF9A" }, // Neon Green
+    { name: "PM10", value: 30, color: "#FFD36A" },  // Neon Yellow
+    { name: "NO2", value: 15, color: "#8FD3FF" },   // Neon Blue
+    { name: "SO2", value: 10, color: "#FF6B6B" },   // Neon Red
+  ]
+}
+
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true)
   const [lastUpdate, setLastUpdate] = useState("--:--")
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [maxWaterLevel, setMaxWaterLevel] = useState(0)
 
-  // Mock data - replace with real API calls
-  const [airData, setAirData] = useState({
-    pm25: 0,
-    pm10: 0,
-    co: 0,
-    no2: 0,
-    o3: 0,
-    so2: 44,
-    chartData: {
-      labels: ["10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45", "12:00", "12:15"],
-      pm25: [120, 250, 180, 300, 220, 150, 280, 200, 350, 250],
-      pm10: [80, 150, 100, 200, 130, 90, 170, 120, 220, 160],
-      co: [200, 400, 300, 500, 350, 250, 450, 320, 550, 400],
-      no2: [150, 300, 200, 400, 280, 180, 350, 250, 450, 320],
-    },
-  })
-
-  const [waterData, setWaterData] = useState({
-    level: 0,
-    ph: 0,
-    turbidity: 0,
-  })
+  // Initialize with constant configuration
+  const [maxWaterLevel, setMaxWaterLevel] = useState(DASHBOARD_CONFIG.waterQuality.level)
+  const [airData, setAirData] = useState(DASHBOARD_CONFIG.airQuality)
+  const [waterData, setWaterData] = useState(DASHBOARD_CONFIG.waterQuality)
+  const [forecastData] = useState(DASHBOARD_CONFIG.forecastData)
+  const [donutData] = useState(DASHBOARD_CONFIG.pollutantDonutData)
 
   const [stars, setStars] = useState<Array<{ left: string; top: string; delay: string; duration: string }>>([])
 
   const maxPm25Recorded = Math.max(airData.pm25, ...airData.chartData.pm25)
 
-  // Simulate real-time updates
+  // Clock update only - Data remains constant
   useEffect(() => {
-    const updateData = () => {
+    const updateTime = () => {
       const now = new Date()
       setLastUpdate(
         `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`
       )
-
-      // Simulate fluctuating values
-      setAirData((prev) => ({
-        ...prev,
-        pm25: Math.random() * 50,
-        pm10: Math.random() * 30,
-        co: Math.random() * 10,
-        no2: Math.random() * 20,
-        o3: Math.random() * 15,
-        so2: 40 + Math.random() * 10,
-      }))
-
-      setWaterData({
-        level: 5 + Math.random() * 3,
-        ph: 6.5 + Math.random() * 2,
-        turbidity: 20 + Math.random() * 30,
-      })
     }
 
-    updateData()
-    const interval = setInterval(updateData, 3000)
+    updateTime()
+    const interval = setInterval(updateTime, 1000) // Update clock every second
     return () => clearInterval(interval)
   }, [])
 
@@ -245,7 +255,7 @@ export default function Dashboard() {
 
               {/* Pollutant Donut (New) */}
               <div className="flex-1 min-h-[250px]">
-                <PollutantDonutChart />
+                <PollutantDonutChart data={donutData} />
               </div>
             </div>
           </div>
@@ -254,7 +264,7 @@ export default function Dashboard() {
           <div className="mx-auto mt-6 grid w-full max-w-6xl grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
             {/* Predictive Intelligence (Left) */}
             <div className="h-[350px]">
-              <AQIForecastChart />
+              <AQIForecastChart data={forecastData} />
             </div>
 
             {/* Live Location Map (Right, Compact) */}

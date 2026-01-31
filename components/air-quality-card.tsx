@@ -12,6 +12,8 @@ import {
   Tooltip,
   Legend,
   Filler,
+  ChartOptions,
+  TooltipItem,
 } from "chart.js"
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -29,6 +31,8 @@ interface AirQualityData {
     pm10: number[]
     co: number[]
     no2: number[]
+    o3: number[]
+    so2: number[]
   }
 }
 
@@ -112,8 +116,8 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
     labels: data.chartData.labels,
     datasets: [
       {
-        label: "Good Limit",
-        data: data.chartData.pm25.map((v) => v * 1.1),
+        label: "PM2.5",
+        data: data.chartData.pm25,
         borderColor: "#7CFF9A",
         backgroundColor: "rgba(124,255,154,0.1)",
         fill: true,
@@ -123,8 +127,8 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
         borderWidth: 2,
       },
       {
-        label: "Moderate",
-        data: data.chartData.pm10.map((v) => v * 0.9),
+        label: "PM10",
+        data: data.chartData.pm10,
         borderColor: "#FFD36A",
         backgroundColor: "rgba(255,211,106,0.08)",
         fill: true,
@@ -134,8 +138,8 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
         borderWidth: hoveredPollutant === "pm10" ? 3 : 2,
       },
       {
-        label: "50%",
-        data: data.chartData.co.map((v) => v * 0.5),
+        label: "CO (Scaled)",
+        data: data.chartData.co.map((v) => v * 10), // Scale up for visibility if needed, user just said "Scaled"
         borderColor: "#8FD3FF",
         backgroundColor: "rgba(143,211,255,0.08)",
         fill: false,
@@ -145,8 +149,8 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
         borderWidth: 2,
       },
       {
-        label: "Unhealthy",
-        data: data.chartData.no2.map((v) => v * 0.8),
+        label: "NO2",
+        data: data.chartData.no2,
         borderColor: "#B68FFF",
         backgroundColor: "rgba(182,143,255,0.08)",
         fill: false,
@@ -155,10 +159,32 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
         pointHoverRadius: 5,
         borderWidth: 2,
       },
+      // For Ozone (Usually medium levels)
+      {
+        label: "O3",
+        data: data.chartData.o3.map((v) => v * 0.85), // Slight shrink to stay clear of NO2
+        borderColor: "#fde047", // Yellow
+        fill: false,
+        tension: 0.4,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        borderWidth: 2,
+      },
+      // For SO2 (Usually very low levels)
+      {
+        label: "SO2",
+        data: data.chartData.so2, // NO FORMULA needed because values are small
+        borderColor: "#ec4899", // Pink
+        fill: false,
+        tension: 0.4,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        borderWidth: 2,
+      }
     ],
   }
 
-  const chartOptions = {
+  const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -185,8 +211,10 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
         padding: 12,
         displayColors: true,
         callbacks: {
-          label: (context: { dataset: { label?: string }; parsed: { y: number } }) =>
-            `${context.dataset.label}: ${context.parsed.y.toFixed(1)} units`,
+          label: (context: TooltipItem<'line'>) => {
+            const value = context.parsed.y
+            return `${context.dataset.label}: ${value !== null ? value.toFixed(1) : "0.0"} units`
+          },
         },
       },
     },
@@ -218,9 +246,8 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
   return (
     <div
       ref={cardRef}
-      className={`card-vibrant card-air group relative flex h-full flex-col transition-all duration-700 ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-      }`}
+      className={`card-vibrant card-air group relative flex h-full flex-col transition-all duration-700 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+        }`}
     >
       {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden rounded-2xl">
@@ -251,11 +278,10 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
         {pollutants.map((p, i) => (
           <div
             key={p.label}
-            className={`group/item cursor-pointer rounded-xl border bg-slate-900/50 p-3 text-center backdrop-blur-sm transition-all duration-300 ${
-              hoveredPollutant === p.key
-                ? "border-emerald-500/50 bg-emerald-500/10 scale-105 shadow-[0_0_20px_rgba(124,255,154,0.2)]"
-                : "border-white/5 hover:border-emerald-500/30 hover:bg-slate-800/50"
-            }`}
+            className={`group/item cursor-pointer rounded-xl border bg-slate-900/50 p-3 text-center backdrop-blur-sm transition-all duration-300 ${hoveredPollutant === p.key
+              ? "border-emerald-500/50 bg-emerald-500/10 scale-105 shadow-[0_0_20px_rgba(124,255,154,0.2)]"
+              : "border-white/5 hover:border-emerald-500/30 hover:bg-slate-800/50"
+              }`}
             style={{ animationDelay: `${i * 100}ms` }}
             onMouseEnter={() => setHoveredPollutant(p.key)}
             onMouseLeave={() => setHoveredPollutant(null)}
@@ -264,11 +290,10 @@ export function AirQualityCard({ data }: AirQualityCardProps) {
               {p.label}
             </div>
             <div
-              className={`text-xl font-bold transition-all duration-300 ${
-                hoveredPollutant === p.key
-                  ? "text-emerald-400 scale-110"
-                  : "text-white group-hover/item:text-emerald-400"
-              }`}
+              className={`text-xl font-bold transition-all duration-300 ${hoveredPollutant === p.key
+                ? "text-emerald-400 scale-110"
+                : "text-white group-hover/item:text-emerald-400"
+                }`}
             >
               {Math.round(p.value)}
             </div>

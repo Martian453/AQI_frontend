@@ -3,14 +3,20 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
 import { useState } from "react"
 
-const data = [
-    { name: "PM2.5", value: 45, color: "#7CFF9A" }, // Neon Green
-    { name: "PM10", value: 30, color: "#FFD36A" },  // Neon Yellow
-    { name: "NO2", value: 15, color: "#8FD3FF" },   // Neon Blue
-    { name: "SO2", value: 10, color: "#FF6B6B" },   // Neon Red
-]
+// ... imports
 
-export function PollutantDonutChart() {
+interface PollutantNode {
+    name: string
+    value: number
+    color: string
+}
+
+interface PollutantDonutChartProps {
+    data: PollutantNode[]
+}
+
+export function PollutantDonutChart({ data }: PollutantDonutChartProps) {
+
     const [activeIndex, setActiveIndex] = useState(0)
 
     const onPieEnter = (_: any, index: number) => {

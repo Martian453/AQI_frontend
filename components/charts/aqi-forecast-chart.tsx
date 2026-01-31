@@ -2,17 +2,21 @@
 
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Area } from "recharts"
 
-const data = [
-    { time: "Now", actual: 145, predicted: 145 },
-    { time: "+1h", actual: null, predicted: 152 },
-    { time: "+2h", actual: null, predicted: 158 },
-    { time: "+3h", actual: null, predicted: 165 },
-    { time: "+4h", actual: null, predicted: 160 },
-    { time: "+5h", actual: null, predicted: 155 },
-    { time: "+6h", actual: null, predicted: 148 },
-]
+// ... imports
 
-export function AQIForecastChart() {
+interface AQIForecastPoint {
+    time: string
+    actual: number | null
+    predicted: number | null
+}
+
+interface AQIForecastChartProps {
+    data: AQIForecastPoint[]
+}
+
+export function AQIForecastChart({ data }: AQIForecastChartProps) {
+    // Component uses 'data' prop directly now
+
     return (
         <div className="h-full w-full flex flex-col p-4 bg-slate-900/40 rounded-xl border border-emerald-500/10 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
